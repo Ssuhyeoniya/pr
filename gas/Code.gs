@@ -1,23 +1,42 @@
 /**
  * 홍보협의체 - Google Apps Script 중앙 프록시
  *
+ * [구조]
+ * - 이 스크립트는 "새 스프레드시트"에서 배포
+ * - 데이터 원본 스프레드시트를 ID로 원격 참조
+ * - 중앙 제어 시트(CONFIG)는 이 새 스프레드시트에 생성
+ *
  * [배포 방법]
- * 1. 구글 스프레드시트 > 확장 프로그램 > Apps Script 열기
- * 2. 이 코드를 Code.gs에 붙여넣기
- * 3. 배포 > 새 배포 > 웹 앱 선택
+ * 1. 새 구글 스프레드시트 생성
+ * 2. 확장 프로그램 > Apps Script > 이 코드 붙여넣기
+ * 3. 배포 > 새 배포 > 웹 앱
  *    - 실행 사용자: 본인
  *    - 액세스 권한: 모든 사용자 (익명 포함)
- * 4. 배포 후 받은 URL을 웹사이트 sheets-proxy.js의 GAS_WEB_APP_URL에 설정
+ * 4. 배포 URL을 웹사이트 sheets-proxy.js의 GAS_WEB_APP_URL에 설정
  *
- * [시트 구조]
- * - POST_METRICS: 블로그 포스트 데이터
- * - STATS_DAILY: 일자별 통계 데이터
- * - CONFIG (선택): 웹사이트 설정 중앙 제어용
+ * [중앙 제어]
+ * - 이 새 스프레드시트에 CONFIG 시트를 만들면 웹사이트 설정 제어 가능
+ * - 데이터 원본을 바꾸고 싶으면 아래 DATA_SOURCES의 ID만 변경
  */
 
-/**
- * GET 요청 핸들러 - 웹 앱 엔드포인트
- */
+// ========================================
+// ★ 데이터 원본 설정 - 여기서 중앙 제어
+// ========================================
+var DATA_SOURCES = {
+  POST_METRICS: {
+    spreadsheetId: '13LWJmvtSJRy6G43Lo_jar9hqZquCY4vB4bP4kAQVQLQ',
+    sheetName: 'POST_METRICS'
+  },
+  STATS_DAILY: {
+    spreadsheetId: '13LWJmvtSJRy6G43Lo_jar9hqZquCY4vB4bP4kAQVQLQ',
+    sheetName: 'STATS_DAILY'
+  }
+};
+
+// ========================================
+// 웹 앱 엔드포인트
+// ========================================
+
 function doGet(e) {
   var params = e.parameter;
   var action = params.action || 'postMetrics';
@@ -49,22 +68,30 @@ function doGet(e) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
+// ========================================
+// 원격 시트 접근
+// ========================================
+
 /**
- * POST_METRICS 시트 데이터 조회
- * params.columns - 표시할 컬럼 (쉼표 구분, 선택)
- * params.service - 서비스 필터 (선택)
- * params.category - 카테고리 필터 (선택)
- * params.search - 제목 검색어 (선택)
- * params.limit - 최대 행 수 (선택, 기본 전체)
- * params.offset - 시작 위치 (선택, 기본 0)
+ * 원격 스프레드시트에서 시트를 가져옴
  */
+function getRemoteSheet(sourceKey) {
+  var src = DATA_SOURCES[sourceKey];
+  if (!src) return null;
+  var ss = SpreadsheetApp.openById(src.spreadsheetId);
+  return ss.getSheetByName(src.sheetName);
+}
+
+// ========================================
+// POST_METRICS
+// ========================================
+
 function getPostMetrics(params) {
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('POST_METRICS');
+  var sheet = getRemoteSheet('POST_METRICS');
   if (!sheet) return { error: 'POST_METRICS 시트를 찾을 수 없습니다.' };
 
   var data = sheetToObjects(sheet);
 
-  // 필터 적용
   if (params.service) {
     data = data.filter(function(row) { return row.service === params.service; });
   }
@@ -78,19 +105,16 @@ function getPostMetrics(params) {
     });
   }
 
-  // 표시 컬럼 제한
   var displayColumns = ['service', 'title', 'thumbnail', 'publishDate', 'category', 'totalVisit', 'inbound'];
   if (params.columns) {
     displayColumns = params.columns.split(',').map(function(c) { return c.trim(); });
   }
 
-  // 페이지네이션
   var offset = parseInt(params.offset) || 0;
   var limit = parseInt(params.limit) || data.length;
   var total = data.length;
   data = data.slice(offset, offset + limit);
 
-  // 컬럼 필터링
   var filtered = data.map(function(row) {
     var obj = {};
     displayColumns.forEach(function(col) {
@@ -110,20 +134,17 @@ function getPostMetrics(params) {
   };
 }
 
-/**
- * STATS_DAILY 시트 데이터 조회
- * params.category - 카테고리 필터 (선택)
- * params.dateFrom - 시작일 YYYY-MM-DD (선택)
- * params.dateTo - 종료일 YYYY-MM-DD (선택)
- */
+// ========================================
+// STATS_DAILY
+// ========================================
+
 function getStatsDaily(params) {
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('STATS_DAILY');
+  var sheet = getRemoteSheet('STATS_DAILY');
   if (!sheet) return { error: 'STATS_DAILY 시트를 찾을 수 없습니다.' };
 
   var data = sheetToObjects(sheet);
   var headers = getSheetHeaders(sheet);
 
-  // 카테고리 필터
   if (params.category) {
     var cat = params.category.toLowerCase();
     data = data.filter(function(row) {
@@ -133,7 +154,6 @@ function getStatsDaily(params) {
     });
   }
 
-  // 날짜 필터
   if (params.dateFrom || params.dateTo) {
     var dateCol = findDateColumn(headers);
     if (dateCol) {
@@ -147,10 +167,8 @@ function getStatsDaily(params) {
     }
   }
 
-  // 카테고리 목록 추출
   var categories = extractUniqueCategories(data, headers);
 
-  // 페이지네이션
   var offset = parseInt(params.offset) || 0;
   var limit = parseInt(params.limit) || data.length;
   var total = data.length;
@@ -168,16 +186,10 @@ function getStatsDaily(params) {
   };
 }
 
-/**
- * CONFIG 시트에서 웹사이트 설정 읽기
- * CONFIG 시트 구조: key | value
- * 예시:
- *   site_title | 홍보협의체
- *   blog_page_size | 20
- *   stats_page_size | 30
- *   enabled_pages | schedule,blog,stats
- *   categories | 블로그,뉴스,SNS,영상
- */
+// ========================================
+// CONFIG - 이 새 스프레드시트에서 중앙 제어
+// ========================================
+
 function getConfig() {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('CONFIG');
   if (!sheet) {
@@ -206,9 +218,6 @@ function getConfig() {
   };
 }
 
-/**
- * 기본 설정값
- */
 function getDefaultConfig() {
   return {
     site_title: '홍보협의체',
@@ -219,28 +228,37 @@ function getDefaultConfig() {
   };
 }
 
-/**
- * 스프레드시트의 시트 목록 반환
- */
 function getSheetList() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheets = ss.getSheets().map(function(s) {
-    return {
-      name: s.getName(),
-      rows: s.getLastRow(),
-      cols: s.getLastColumn()
-    };
-  });
-  return { sheets: sheets };
+  var results = [];
+  var keys = Object.keys(DATA_SOURCES);
+  for (var i = 0; i < keys.length; i++) {
+    var src = DATA_SOURCES[keys[i]];
+    try {
+      var ss = SpreadsheetApp.openById(src.spreadsheetId);
+      var sheet = ss.getSheetByName(src.sheetName);
+      results.push({
+        key: keys[i],
+        spreadsheetId: src.spreadsheetId,
+        sheetName: src.sheetName,
+        rows: sheet ? sheet.getLastRow() : 0,
+        cols: sheet ? sheet.getLastColumn() : 0
+      });
+    } catch (err) {
+      results.push({
+        key: keys[i],
+        spreadsheetId: src.spreadsheetId,
+        sheetName: src.sheetName,
+        error: err.message
+      });
+    }
+  }
+  return { sources: results };
 }
 
 // ========================================
 // 유틸리티 함수
 // ========================================
 
-/**
- * 시트 데이터를 객체 배열로 변환
- */
 function sheetToObjects(sheet) {
   var data = sheet.getDataRange().getValues();
   if (data.length < 2) return [];
@@ -253,7 +271,6 @@ function sheetToObjects(sheet) {
     var hasValue = false;
     for (var j = 0; j < headers.length; j++) {
       var val = data[i][j];
-      // Date 객체를 ISO 문자열로 변환
       if (val instanceof Date) {
         val = Utilities.formatDate(val, Session.getScriptTimeZone(), 'yyyy-MM-dd');
       }
@@ -266,18 +283,12 @@ function sheetToObjects(sheet) {
   return rows;
 }
 
-/**
- * 시트 헤더 목록 반환
- */
 function getSheetHeaders(sheet) {
   var data = sheet.getDataRange().getValues();
   if (data.length === 0) return [];
   return data[0].map(function(h) { return String(h).trim(); }).filter(function(h) { return h !== ''; });
 }
 
-/**
- * 날짜 컬럼 찾기
- */
 function findDateColumn(headers) {
   for (var i = 0; i < headers.length; i++) {
     var h = headers[i].toLowerCase();
@@ -288,9 +299,6 @@ function findDateColumn(headers) {
   return null;
 }
 
-/**
- * 날짜 값 포맷팅
- */
 function formatDateValue(val) {
   if (!val) return null;
   if (val instanceof Date) {
@@ -301,9 +309,6 @@ function formatDateValue(val) {
   return null;
 }
 
-/**
- * 고유 카테고리 추출
- */
 function extractUniqueCategories(data, headers) {
   var catCol = null;
   for (var i = 0; i < headers.length; i++) {
