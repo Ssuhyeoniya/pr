@@ -1,6 +1,6 @@
 /* ============================================
    홍보협의체 웹사이트 - Global Styles
-   Font size: 8px ~ 12px 제한
+   150% 스케일 적용
    ============================================ */
 
 :root {
@@ -20,14 +20,14 @@
   --color-nav-text: #e8eaed;
   --color-nav-active: #1a73e8;
 
-  --font-size-xs: 0.5rem;
-  --font-size-sm: 0.5rem;
-  --font-size-base: 0.5625rem;
-  --font-size-md: 0.625rem;
-  --font-size-lg: 0.6875rem;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.75rem;
+  --font-size-base: 0.8125rem;
+  --font-size-md: 0.875rem;
+  --font-size-lg: 1rem;
 
-  --nav-width: 140px;
-  --header-height: 40px;
+  --nav-width: 180px;
+  --header-height: 48px;
 }
 
 * {
@@ -42,7 +42,7 @@ html {
 
 body {
   height: 100%;
-  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: var(--font-size-base);
   color: var(--color-text);
   background: var(--color-bg);
@@ -70,16 +70,16 @@ body {
 }
 
 .nav-logo {
-  padding: 12px 14px;
+  padding: 14px 16px;
   border-bottom: 1px solid rgba(255,255,255,0.1);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .nav-logo-icon {
-  width: 24px;
-  height: 24px;
+  width: 30px;
+  height: 30px;
   background: var(--color-primary);
   border-radius: 6px;
   display: flex;
@@ -98,18 +98,18 @@ body {
 
 .nav-menu {
   list-style: none;
-  padding: 8px 8px 4px;
+  padding: 10px 10px 6px;
 }
 
 .nav-menu li {
-  margin-bottom: 2px;
+  margin-bottom: 3px;
 }
 
 .nav-menu a {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 7px 10px;
+  padding: 8px 12px;
   color: var(--color-nav-text);
   text-decoration: none;
   font-size: var(--font-size-base);
@@ -128,12 +128,12 @@ body {
 }
 
 .nav-menu .nav-sub {
-  padding-left: 18px;
+  padding-left: 20px;
 }
 
 .nav-menu .nav-sub a {
   font-size: var(--font-size-sm);
-  padding: 5px 10px;
+  padding: 6px 12px;
 }
 
 /* ============================================
@@ -154,7 +154,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 16px;
+  padding: 0 20px;
 }
 
 .content-header h1 {
@@ -165,13 +165,13 @@ body {
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .content-body {
   flex: 1;
   overflow-y: auto;
-  padding: 14px;
+  padding: 16px;
 }
 
 /* ============================================
@@ -181,7 +181,7 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 4px 10px;
+  padding: 5px 12px;
   font-size: var(--font-size-sm);
   border: 1px solid var(--color-border);
   border-radius: 4px;
@@ -207,7 +207,7 @@ body {
 }
 
 .btn-sm {
-  padding: 3px 6px;
+  padding: 4px 8px;
   font-size: var(--font-size-xs);
 }
 
@@ -225,31 +225,31 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
+  padding: 10px 14px;
   border-bottom: 1px solid var(--color-border);
-  gap: 8px;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
 .data-table-toolbar .toolbar-left {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 .data-table-toolbar .toolbar-right {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 .search-input {
-  padding: 4px 8px;
+  padding: 5px 10px;
   font-size: var(--font-size-sm);
   border: 1px solid var(--color-border);
   border-radius: 4px;
   outline: none;
-  width: 160px;
+  width: 180px;
 }
 
 .search-input:focus {
@@ -257,7 +257,7 @@ body {
 }
 
 .filter-select {
-  padding: 4px 6px;
+  padding: 5px 8px;
   font-size: var(--font-size-sm);
   border: 1px solid var(--color-border);
   border-radius: 4px;
@@ -283,7 +283,7 @@ body {
 }
 
 .data-table th {
-  padding: 6px 10px;
+  padding: 8px 12px;
   font-size: var(--font-size-sm);
   font-weight: 600;
   text-align: left;
@@ -300,7 +300,7 @@ body {
 
 .data-table th .sort-icon {
   font-size: var(--font-size-xs);
-  margin-left: 2px;
+  margin-left: 3px;
   opacity: 0.4;
 }
 
@@ -310,11 +310,11 @@ body {
 }
 
 .data-table td {
-  padding: 5px 10px;
+  padding: 6px 12px;
   font-size: var(--font-size-sm);
   border-bottom: 1px solid #f0f0f0;
   color: var(--color-text);
-  max-width: 200px;
+  max-width: 240px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -325,20 +325,20 @@ body {
 }
 
 .data-table .thumbnail-cell {
-  width: 40px;
-  padding: 3px 6px;
+  width: 50px;
+  padding: 4px 8px;
 }
 
 .data-table .thumbnail-cell img {
-  width: 36px;
-  height: 24px;
+  width: 42px;
+  height: 28px;
   object-fit: cover;
   border-radius: 3px;
   border: 1px solid var(--color-border);
 }
 
 .data-table .title-cell {
-  max-width: 260px;
+  max-width: 180px;
 }
 
 .data-table .title-cell a {
@@ -358,7 +358,7 @@ body {
 /* Badge */
 .badge {
   display: inline-block;
-  padding: 1px 6px;
+  padding: 2px 8px;
   font-size: var(--font-size-xs);
   border-radius: 10px;
   font-weight: 500;
@@ -375,7 +375,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
+  padding: 10px 14px;
   border-top: 1px solid var(--color-border);
   font-size: var(--font-size-sm);
   color: var(--color-text-light);
@@ -384,11 +384,11 @@ body {
 .pagination-controls {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
 }
 
 .pagination-controls button {
-  padding: 3px 8px;
+  padding: 4px 10px;
   font-size: var(--font-size-sm);
   border: 1px solid var(--color-border);
   border-radius: 4px;
@@ -406,7 +406,7 @@ body {
 }
 
 .pagination-controls .page-current {
-  padding: 3px 8px;
+  padding: 4px 10px;
   font-weight: 600;
   color: var(--color-primary);
 }
@@ -416,16 +416,16 @@ body {
    ============================================ */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 10px;
-  margin-bottom: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
 .stat-card {
   background: var(--color-white);
   border: 1px solid var(--color-border);
   border-radius: 8px;
-  padding: 10px 12px;
+  padding: 12px 14px;
 }
 
 .stat-card-label {
@@ -442,7 +442,7 @@ body {
 
 .stat-card-change {
   font-size: var(--font-size-xs);
-  margin-top: 2px;
+  margin-top: 3px;
 }
 
 .stat-card-change.positive { color: var(--color-success); }
@@ -454,13 +454,13 @@ body {
 .category-tabs {
   display: flex;
   align-items: center;
-  gap: 4px;
-  margin-bottom: 12px;
+  gap: 6px;
+  margin-bottom: 14px;
   flex-wrap: wrap;
 }
 
 .category-tab {
-  padding: 4px 10px;
+  padding: 5px 12px;
   font-size: var(--font-size-sm);
   border: 1px solid var(--color-border);
   border-radius: 16px;
@@ -481,7 +481,7 @@ body {
 }
 
 .category-tab-add {
-  padding: 4px 8px;
+  padding: 5px 10px;
   font-size: var(--font-size-sm);
   border: 1px dashed var(--color-border);
   border-radius: 16px;
@@ -509,7 +509,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
+  padding: 10px 14px;
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -520,11 +520,11 @@ body {
 
 .calendar-nav {
   display: flex;
-  gap: 4px;
+  gap: 6px;
 }
 
 .calendar-nav button {
-  padding: 3px 8px;
+  padding: 4px 10px;
   font-size: var(--font-size-sm);
   border: 1px solid var(--color-border);
   border-radius: 4px;
@@ -542,19 +542,19 @@ body {
 }
 
 .calendar-day-header {
-  padding: 6px 4px;
+  padding: 8px 4px;
   text-align: center;
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-sm);
   font-weight: 600;
   color: var(--color-text-light);
   border-bottom: 1px solid var(--color-border);
 }
 
 .calendar-day {
-  height: 72px;
-  min-height: 72px;
-  max-height: 72px;
-  padding: 3px 4px;
+  height: 100px;
+  min-height: 100px;
+  max-height: 100px;
+  padding: 4px 5px;
   overflow: hidden;
   border-right: 1px solid #f0f0f0;
   border-bottom: 1px solid #f0f0f0;
@@ -575,7 +575,7 @@ body {
   font-weight: 600;
   font-size: var(--font-size-sm);
   color: var(--color-text);
-  margin-bottom: 2px;
+  margin-bottom: 3px;
 }
 
 .calendar-day.other-month .day-number {
@@ -586,8 +586,8 @@ body {
   background: var(--color-primary);
   color: #fff;
   border-radius: 50%;
-  width: 18px;
-  height: 18px;
+  width: 22px;
+  height: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -595,14 +595,15 @@ body {
 }
 
 .calendar-event {
-  padding: 1px 4px;
+  padding: 1px 5px;
   font-size: var(--font-size-xs);
-  border-radius: 2px;
-  margin-bottom: 1px;
+  border-radius: 3px;
+  margin-bottom: 2px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   cursor: pointer;
+  line-height: 1.4;
 }
 
 .calendar-event.type-meeting { background: #e8f0fe; color: #1967d2; }
@@ -613,27 +614,27 @@ body {
 /* Schedule list (side) */
 .schedule-layout {
   display: grid;
-  grid-template-columns: 1fr 240px;
-  gap: 12px;
+  grid-template-columns: 1fr 280px;
+  gap: 14px;
 }
 
 .schedule-sidebar {
   background: var(--color-white);
   border: 1px solid var(--color-border);
   border-radius: 8px;
-  padding: 10px;
+  padding: 12px;
 }
 
 .schedule-sidebar h3 {
   font-size: var(--font-size-md);
   font-weight: 600;
-  margin-bottom: 8px;
-  padding-bottom: 6px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
   border-bottom: 1px solid var(--color-border);
 }
 
 .schedule-item {
-  padding: 6px 0;
+  padding: 8px 0;
   border-bottom: 1px solid #f0f0f0;
 }
 
@@ -649,15 +650,15 @@ body {
 .schedule-item-title {
   font-size: var(--font-size-sm);
   font-weight: 500;
-  margin-top: 1px;
+  margin-top: 2px;
 }
 
 .schedule-item-type {
   display: inline-block;
   font-size: var(--font-size-xs);
-  padding: 0 4px;
-  border-radius: 2px;
-  margin-top: 2px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-top: 3px;
 }
 
 /* Modal */
@@ -681,13 +682,13 @@ body {
 .modal {
   background: var(--color-white);
   border-radius: 8px;
-  width: 320px;
+  width: 420px;
   max-width: 90%;
   box-shadow: 0 8px 32px rgba(0,0,0,0.15);
 }
 
 .modal-header {
-  padding: 10px 14px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--color-border);
   display: flex;
   align-items: center;
@@ -705,30 +706,30 @@ body {
   font-size: var(--font-size-lg);
   cursor: pointer;
   color: var(--color-text-muted);
-  padding: 2px;
+  padding: 4px;
 }
 
 .modal-body {
-  padding: 12px 14px;
+  padding: 14px 16px;
 }
 
 .modal-footer {
-  padding: 8px 14px;
+  padding: 10px 16px;
   border-top: 1px solid var(--color-border);
   display: flex;
   justify-content: flex-end;
-  gap: 6px;
+  gap: 8px;
 }
 
 .form-group {
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 .form-group label {
   display: block;
   font-size: var(--font-size-sm);
   font-weight: 500;
-  margin-bottom: 3px;
+  margin-bottom: 4px;
   color: var(--color-text-light);
 }
 
@@ -736,7 +737,7 @@ body {
 .form-group select,
 .form-group textarea {
   width: 100%;
-  padding: 4px 8px;
+  padding: 5px 10px;
   font-size: var(--font-size-sm);
   border: 1px solid var(--color-border);
   border-radius: 4px;
@@ -756,19 +757,19 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 40px;
+  padding: 50px;
   color: var(--color-text-muted);
   font-size: var(--font-size-base);
 }
 
 .loading-spinner::before {
   content: '';
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   border: 2px solid var(--color-border);
   border-top-color: var(--color-primary);
   border-radius: 50%;
-  margin-right: 8px;
+  margin-right: 10px;
   animation: spin 0.6s linear infinite;
 }
 
@@ -790,8 +791,8 @@ body {
 .date-filter-bar {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: 10px;
+  margin-bottom: 14px;
   flex-wrap: wrap;
 }
 
@@ -802,7 +803,7 @@ body {
 }
 
 .date-filter-bar input[type="date"] {
-  padding: 3px 6px;
+  padding: 4px 8px;
   font-size: var(--font-size-sm);
   border: 1px solid var(--color-border);
   border-radius: 4px;
@@ -826,14 +827,14 @@ body {
   background: var(--color-white);
   border: 1px solid var(--color-border);
   border-radius: 8px;
-  padding: 10px 12px;
-  margin-bottom: 12px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
 }
 
 .chart-title {
   font-size: var(--font-size-md);
   font-weight: 600;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 .bar-chart-scroll {
@@ -844,9 +845,9 @@ body {
 .bar-chart {
   display: flex;
   align-items: flex-end;
-  gap: 4px;
-  height: 140px;
-  padding-top: 10px;
+  gap: 6px;
+  height: 180px;
+  padding-top: 12px;
 }
 
 .bar-group {
@@ -859,11 +860,11 @@ body {
 .bar-pair {
   display: flex;
   align-items: flex-end;
-  gap: 1px;
+  gap: 2px;
 }
 
 .bar {
-  border-radius: 2px 2px 0 0;
+  border-radius: 3px 3px 0 0;
   transition: height 0.3s;
 }
 
@@ -873,14 +874,14 @@ body {
 .bar-label {
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
-  margin-top: 3px;
+  margin-top: 4px;
   white-space: nowrap;
 }
 
 .chart-legend {
   display: flex;
-  gap: 12px;
-  margin-top: 6px;
+  gap: 14px;
+  margin-top: 8px;
   font-size: var(--font-size-xs);
   color: var(--color-text-light);
 }
@@ -888,12 +889,12 @@ body {
 .legend-item {
   display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
 }
 
 .legend-dot {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   border-radius: 2px;
   display: inline-block;
 }
@@ -904,22 +905,22 @@ body {
 .top5-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 14px;
 }
 
 .top5-block {
   background: var(--color-white);
   border: 1px solid var(--color-border);
   border-radius: 8px;
-  padding: 10px 12px;
+  padding: 12px 14px;
 }
 
 .top5-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 8px;
-  padding-bottom: 6px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -936,8 +937,8 @@ body {
 .top5-row {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 0;
+  gap: 8px;
+  padding: 6px 0;
   border-bottom: 1px solid #f5f5f5;
   font-size: var(--font-size-sm);
 }
@@ -947,8 +948,8 @@ body {
 }
 
 .top5-rank {
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   background: var(--color-primary);
   color: #fff;
   border-radius: 50%;
@@ -993,7 +994,7 @@ body {
 .schedule-item-clickable {
   cursor: pointer;
   border-radius: 4px;
-  padding: 6px 4px;
+  padding: 8px 6px;
   transition: background 0.15s;
 }
 
@@ -1006,13 +1007,10 @@ body {
    ============================================ */
 @media (max-width: 768px) {
   html { font-size: 14px; }
-  .nav-sidebar {
-    width: 90px;
-    min-width: 90px;
-  }
+  .nav-sidebar { width: 100px; min-width: 100px; }
   .nav-logo-icon { display: none; }
   .nav-logo-text { font-size: var(--font-size-sm); }
-  .nav-menu a { font-size: var(--font-size-xs); padding: 5px 6px; }
+  .nav-menu a { font-size: var(--font-size-xs); padding: 6px 8px; }
   .nav-menu .nav-sub a { font-size: var(--font-size-xs); }
   .schedule-layout { grid-template-columns: 1fr; }
   .top5-grid { grid-template-columns: 1fr; }
@@ -1020,5 +1018,5 @@ body {
 
 @media (max-width: 480px) {
   html { font-size: 12px; }
-  .nav-sidebar { width: 70px; min-width: 70px; }
+  .nav-sidebar { width: 80px; min-width: 80px; }
 }
