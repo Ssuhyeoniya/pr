@@ -20,11 +20,11 @@
   --color-nav-text: #e8eaed;
   --color-nav-active: #1a73e8;
 
-  --font-size-xs: 8px;
-  --font-size-sm: 8px;
-  --font-size-base: 9px;
-  --font-size-md: 10px;
-  --font-size-lg: 11px;
+  --font-size-xs: 0.5rem;
+  --font-size-sm: 0.5rem;
+  --font-size-base: 0.5625rem;
+  --font-size-md: 0.625rem;
+  --font-size-lg: 0.6875rem;
 
   --nav-width: 140px;
   --header-height: 40px;
@@ -36,7 +36,11 @@
   box-sizing: border-box;
 }
 
-html, body {
+html {
+  font-size: 16px;
+}
+
+body {
   height: 100%;
   font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: var(--font-size-base);
@@ -547,8 +551,11 @@ html, body {
 }
 
 .calendar-day {
-  min-height: 64px;
+  height: 72px;
+  min-height: 72px;
+  max-height: 72px;
   padding: 3px 4px;
+  overflow: hidden;
   border-right: 1px solid #f0f0f0;
   border-bottom: 1px solid #f0f0f0;
   font-size: var(--font-size-xs);
@@ -801,6 +808,17 @@ html, body {
   border-radius: 4px;
 }
 
+.data-table-fixed {
+  table-layout: fixed;
+}
+
+.data-table-fixed td,
+.data-table-fixed th {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* ============================================
    Bar Chart
    ============================================ */
@@ -987,23 +1005,20 @@ html, body {
    Responsive
    ============================================ */
 @media (max-width: 768px) {
+  html { font-size: 14px; }
   .nav-sidebar {
-    width: 48px;
-    min-width: 48px;
+    width: 90px;
+    min-width: 90px;
   }
-  .nav-logo-text,
-  .nav-section-title,
-  .nav-menu a span:not(.nav-icon) {
-    display: none;
-  }
-  .nav-menu a {
-    justify-content: center;
-    padding: 8px;
-  }
-  .schedule-layout {
-    grid-template-columns: 1fr;
-  }
-  .top5-grid {
-    grid-template-columns: 1fr;
-  }
+  .nav-logo-icon { display: none; }
+  .nav-logo-text { font-size: var(--font-size-sm); }
+  .nav-menu a { font-size: var(--font-size-xs); padding: 5px 6px; }
+  .nav-menu .nav-sub a { font-size: var(--font-size-xs); }
+  .schedule-layout { grid-template-columns: 1fr; }
+  .top5-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
+  html { font-size: 12px; }
+  .nav-sidebar { width: 70px; min-width: 70px; }
 }

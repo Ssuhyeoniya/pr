@@ -1,6 +1,7 @@
 /**
  * Stats Daily Page - STATS_DAILY
- * 막대그래프 + 인바운드 TOP5 + 조회수 TOP5 + 더보기 팝업
+ * 막대그래프 + 인바운드 TOP5 + 조회수 TOP5
+ * POST_ID → POST_METRICS.postId 매칭으로 title 표시
  */
 
 const StatsPage = (() => {
@@ -11,6 +12,10 @@ const StatsPage = (() => {
   let _activeCategory = '전체';
   let _dateFrom = '';
   let _dateTo = '';
+  let _titleMap = {}; // postId → title 매핑
+
+  // 제거할 컬럼
+  const EXCLUDE_COLS = ['impressions', 'search_in', 'etc'];
 
   function loadUserCategories() {
     try {
@@ -24,11 +29,28 @@ const StatsPage = (() => {
   }
 
   async function render(container) {
-    container.innerHTML = '<div class="loading-spinner">STATS_DAILY 데이터 로딩 중...</div>';
+    container.innerHTML = '<div class="loading-spinner">데이터 로딩 중...</div>';
     try {
-      const result = await SheetsProxy.getStatsDaily();
-      _data = result.rows;
-      _headers = result.headers;
+      // STATS_DAILY + POST_METRICS 병렬 로드
+      const [statsResult, postResult] = await Promise.all([
+        SheetsProxy.getStatsDaily(),
+        SheetsProxy.getPostMetrics({ columns: 'postId,title' })
+      ]);
+
+      // postId → title 매핑 테이블 생성
+      _titleMap = {};
+      if (postResult && postResult.rows) {
+        postResult.rows.forEach(r => {
+          const id = String(r.postId || '').trim();
+          if (id) _titleMap[id] = r.title || '';
+        });
+      }
+
+      _data = statsResult.rows;
+      // 제거 컬럼 필터링
+      _headers = statsResult.headers.filter(h =>
+        !EXCLUDE_COLS.includes(h.toLowerCase().trim())
+      );
       _filtered = [..._data];
       _dateFrom = '';
       _dateTo = '';
@@ -57,43 +79,21 @@ const StatsPage = (() => {
     return [];
   }
 
-  function findCol(keyword) {
+  function getCol(keyword) {
     return _headers.find(h => h.toLowerCase().includes(keyword)) || null;
   }
 
-  function getDateCol() {
-    return _headers.find(h => {
-      const l = h.toLowerCase();
-      return l.includes('date') || l.includes('날짜') || l.includes('일자');
-    }) || null;
-  }
+  function getDateCol() { return getCol('date') || getCol('날짜') || getCol('일자'); }
+  function getVisitCol() { return getCol('totalvisit') || getCol('visit') || getCol('조회') || getCol('view'); }
+  function getInboundCol() { return getCol('inbound') || getCol('유입'); }
+  function getPostIdCol() { return getCol('post_id') || getCol('postid'); }
 
-  function getVisitCol() {
-    return _headers.find(h => {
-      const l = h.toLowerCase();
-      return l.includes('totalvisit') || l.includes('visit') || l.includes('조회') || l.includes('view');
-    }) || null;
-  }
-
-  function getInboundCol() {
-    return _headers.find(h => {
-      const l = h.toLowerCase();
-      return l.includes('inbound') || l.includes('유입');
-    }) || null;
-  }
-
-  function getTitleCol() {
-    return _headers.find(h => {
-      const l = h.toLowerCase();
-      return l.includes('title') || l.includes('제목');
-    }) || null;
-  }
-
-  function getServiceCol() {
-    return _headers.find(h => {
-      const l = h.toLowerCase();
-      return l.includes('service') || l.includes('서비스');
-    }) || null;
+  /** postId로 title 조회 */
+  function resolveTitle(row) {
+    const pidCol = getPostIdCol();
+    if (!pidCol) return null;
+    const pid = String(row[pidCol] || '').trim();
+    return _titleMap[pid] || null;
   }
 
   function applyFilters() {
@@ -116,8 +116,11 @@ const StatsPage = (() => {
 
   function fmtDate(val) {
     if (!val) return null;
-    if (typeof val === 'string' && val.match(/^\d{4}-\d{2}-\d{2}/)) return val.substring(0, 10);
-    if (typeof val === 'string') { const d = new Date(val); if (!isNaN(d)) return d.toISOString().substring(0, 10); }
+    const s = String(val);
+    if (s.match(/^\d{4}-\d{2}-\d{2}/)) return s.substring(0, 10);
+    if (s.includes('T')) return s.substring(0, 10);
+    const d = new Date(s);
+    if (!isNaN(d.getTime())) return d.toISOString().substring(0, 10);
     return null;
   }
 
@@ -125,10 +128,8 @@ const StatsPage = (() => {
     const dateCol = getDateCol();
     const visitCol = getVisitCol();
     const inboundCol = getInboundCol();
-    const titleCol = getTitleCol();
-    const serviceCol = getServiceCol();
 
-    // 일자별 집계 (막대그래프용)
+    // 일자별 집계
     const dailyMap = {};
     _filtered.forEach(row => {
       const d = dateCol ? fmtDate(row[dateCol]) : null;
@@ -139,7 +140,7 @@ const StatsPage = (() => {
     });
     const dailyKeys = Object.keys(dailyMap).sort();
 
-    // TOP5 계산
+    // TOP5
     const visitTop5 = [..._filtered]
       .sort((a, b) => Number(b[visitCol] || 0) - Number(a[visitCol] || 0))
       .slice(0, 5);
@@ -148,7 +149,6 @@ const StatsPage = (() => {
       .slice(0, 5);
 
     container.innerHTML = `
-      <!-- Category Tabs -->
       <div class="category-tabs" id="stats-category-tabs">
         <button class="category-tab ${_activeCategory === '전체' ? 'active' : ''}" data-cat="전체">전체</button>
         ${_categories.map(c =>
@@ -157,7 +157,6 @@ const StatsPage = (() => {
         <button class="category-tab-add" id="stats-add-category">+ 추가</button>
       </div>
 
-      <!-- Date Filter -->
       <div class="date-filter-bar">
         <label>기간:</label>
         <input type="date" id="stats-date-from" value="${_dateFrom}">
@@ -168,7 +167,6 @@ const StatsPage = (() => {
         <span style="font-size:8px;color:#999;margin-left:auto;">총 ${_filtered.length}건</span>
       </div>
 
-      <!-- Bar Chart -->
       <div class="chart-wrapper">
         <div class="chart-title">일자별 현황</div>
         <div class="chart-bar-area" id="stats-chart">
@@ -180,7 +178,6 @@ const StatsPage = (() => {
         </div>
       </div>
 
-      <!-- TOP5 Blocks -->
       <div class="top5-grid">
         <div class="top5-block">
           <div class="top5-header">
@@ -191,7 +188,7 @@ const StatsPage = (() => {
             ${visitTop5.map((r, i) => `
               <div class="top5-row">
                 <span class="top5-rank">${i + 1}</span>
-                <span class="top5-name">${esc(r[titleCol] || r[serviceCol] || '-')}</span>
+                <span class="top5-name">${esc(resolveTitle(r) || '-')}</span>
                 <span class="top5-val">${Number(r[visitCol] || 0).toLocaleString()}</span>
               </div>
             `).join('')}
@@ -207,7 +204,7 @@ const StatsPage = (() => {
             ${inboundTop5.map((r, i) => `
               <div class="top5-row">
                 <span class="top5-rank">${i + 1}</span>
-                <span class="top5-name">${esc(r[titleCol] || r[serviceCol] || '-')}</span>
+                <span class="top5-name">${esc(resolveTitle(r) || '-')}</span>
                 <span class="top5-val">${Number(r[inboundCol] || 0).toLocaleString()}</span>
               </div>
             `).join('')}
@@ -217,7 +214,7 @@ const StatsPage = (() => {
       </div>
     `;
 
-    bindEvents(container, visitCol, inboundCol, titleCol, serviceCol);
+    bindEvents(container, visitCol, inboundCol);
   }
 
   function renderBarChart(keys, map) {
@@ -235,7 +232,7 @@ const StatsPage = (() => {
           ${keys.map(k => {
             const vH = Math.max(2, (map[k].visit / maxVal) * 120);
             const iH = Math.max(2, (map[k].inbound / maxVal) * 120);
-            const label = k.substring(5); // MM-DD
+            const label = k.substring(5);
             return `
               <div class="bar-group" title="${k}\n조회수: ${map[k].visit.toLocaleString()}\n인바운드: ${map[k].inbound.toLocaleString()}">
                 <div class="bar-pair">
@@ -251,23 +248,34 @@ const StatsPage = (() => {
     `;
   }
 
-  function showMorePopup(type, visitCol, inboundCol, titleCol, serviceCol) {
+  function showMorePopup(type, visitCol, inboundCol) {
     const sortCol = type === 'visit' ? visitCol : inboundCol;
     const label = type === 'visit' ? '조회수' : '인바운드';
     const sorted = [..._filtered].sort((a, b) => Number(b[sortCol] || 0) - Number(a[sortCol] || 0));
 
+    // 표시 컬럼: 제거 컬럼 빼고, title 컬럼 추가
+    const displayHeaders = ['title', ..._headers.filter(h =>
+      !EXCLUDE_COLS.includes(h.toLowerCase().trim())
+    )];
+
     const overlay = document.getElementById('modal-overlay');
     document.getElementById('modal-title').textContent = `${label} 전체 목록 (${sorted.length}건)`;
-
-    const displayHeaders = _headers.filter(h => h && h.trim());
-
     document.getElementById('modal-body').innerHTML = `
       <div style="max-height:360px;overflow:auto;">
         <table class="data-table">
           <thead><tr>${displayHeaders.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead>
           <tbody>
             ${sorted.map(row => `<tr>${displayHeaders.map(h => {
-              const v = row[h];
+              let v;
+              if (h === 'title') {
+                v = resolveTitle(row) || '-';
+                return `<td>${esc(v)}</td>`;
+              }
+              v = row[h];
+              // 날짜 포맷
+              if (h.toLowerCase().includes('date') || h.toLowerCase().includes('날짜')) {
+                return `<td>${fmtDate(v) || '-'}</td>`;
+              }
               const isN = typeof v === 'number' || (!isNaN(Number(v)) && v !== '' && v != null);
               return `<td class="${isN ? 'number-cell' : ''}">${v != null ? (isN ? Number(v).toLocaleString() : esc(String(v))) : '-'}</td>`;
             }).join('')}</tr>`).join('')}
@@ -277,7 +285,6 @@ const StatsPage = (() => {
     `;
     document.getElementById('modal-footer').innerHTML = `<button class="btn" id="modal-popup-close">닫기</button>`;
     overlay.classList.add('show');
-
     document.getElementById('modal-popup-close').addEventListener('click', () => overlay.classList.remove('show'));
   }
 
@@ -295,7 +302,6 @@ const StatsPage = (() => {
       <button class="btn btn-primary" id="modal-confirm">추가</button>
     `;
     overlay.classList.add('show');
-
     document.getElementById('modal-cancel').addEventListener('click', () => overlay.classList.remove('show'));
     document.getElementById('modal-confirm').addEventListener('click', () => {
       const name = document.getElementById('new-category-name').value.trim();
@@ -308,7 +314,7 @@ const StatsPage = (() => {
     });
   }
 
-  function bindEvents(container, visitCol, inboundCol, titleCol, serviceCol) {
+  function bindEvents(container, visitCol, inboundCol) {
     container.querySelectorAll('.category-tab').forEach(btn => {
       btn.addEventListener('click', () => {
         _activeCategory = btn.dataset.cat;
@@ -316,35 +322,25 @@ const StatsPage = (() => {
         renderPage(container);
       });
     });
-
     container.querySelector('#stats-add-category')?.addEventListener('click', showAddCategoryModal);
-
     container.querySelector('#stats-date-apply')?.addEventListener('click', () => {
       _dateFrom = container.querySelector('#stats-date-from').value;
       _dateTo = container.querySelector('#stats-date-to').value;
       applyFilters();
       renderPage(container);
     });
-
     container.querySelector('#stats-date-reset')?.addEventListener('click', () => {
       _dateFrom = '';
       _dateTo = '';
       applyFilters();
       renderPage(container);
     });
-
     container.querySelectorAll('.top5-more').forEach(btn => {
-      btn.addEventListener('click', () => {
-        showMorePopup(btn.dataset.type, visitCol, inboundCol, titleCol, serviceCol);
-      });
+      btn.addEventListener('click', () => showMorePopup(btn.dataset.type, visitCol, inboundCol));
     });
   }
 
-  function esc(str) {
-    const d = document.createElement('div');
-    d.textContent = str;
-    return d.innerHTML;
-  }
+  function esc(str) { const d = document.createElement('div'); d.textContent = str; return d.innerHTML; }
 
   return { render };
 })();

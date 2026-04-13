@@ -1,6 +1,8 @@
 /**
  * Schedule (일정 관리) Page
  * 캘린더 + 일정 목록 + 일정 상세/수정/삭제 팝업
+ * - 캘린더 셀 고정 높이, 5개 이상 시 더보기
+ * - 삭제 버튼을 통해서만 삭제 가능
  */
 
 const SchedulePage = (() => {
@@ -10,7 +12,11 @@ const SchedulePage = (() => {
   function loadEvents() {
     try {
       const saved = localStorage.getItem('schedule_events');
-      return saved ? JSON.parse(saved) : getSampleEvents();
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+      return getSampleEvents();
     } catch { return getSampleEvents(); }
   }
 
@@ -98,6 +104,7 @@ const SchedulePage = (() => {
     const daysInPrev = new Date(year, month, 0).getDate();
     const todayStr = fmtISO(new Date());
     const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
+    const MAX_VISIBLE = 4; // 셀에 보이는 최대 일정 수
     let html = '';
 
     for (let i = 0; i < totalCells; i++) {
@@ -117,20 +124,56 @@ const SchedulePage = (() => {
 
       const isToday = dateStr === todayStr;
       const dayEvents = _events.filter(e => e.date === dateStr);
+      const visibleEvents = dayEvents.slice(0, MAX_VISIBLE);
+      const hiddenCount = dayEvents.length - MAX_VISIBLE;
 
       html += `
         <div class="calendar-day ${isOther ? 'other-month' : ''} ${isToday ? 'today' : ''}" data-date="${dateStr}">
           <div class="day-number">${isToday
             ? `<span style="background:var(--color-primary);color:#fff;border-radius:50%;width:14px;height:14px;display:inline-flex;align-items:center;justify-content:center;font-size:8px;">${day}</span>`
             : day}</div>
-          ${dayEvents.slice(0, 2).map(ev =>
+          ${visibleEvents.map(ev =>
             `<div class="calendar-event type-${ev.type} cal-event-click" data-event-id="${ev.id}" title="${esc(ev.title)}">${esc(ev.title)}</div>`
           ).join('')}
-          ${dayEvents.length > 2 ? `<div style="font-size:8px;color:#999;">+${dayEvents.length - 2}개</div>` : ''}
+          ${hiddenCount > 0
+            ? `<div class="cal-day-more" data-date="${dateStr}" style="font-size:8px;color:var(--color-primary);cursor:pointer;">+${hiddenCount}개 더보기</div>`
+            : ''}
         </div>
       `;
     }
     return html;
+  }
+
+  /** 특정 날짜의 전체 일정 팝업 */
+  function showDayEventsPopup(dateStr) {
+    const dayEvents = _events
+      .filter(e => e.date === dateStr)
+      .sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+
+    const overlay = document.getElementById('modal-overlay');
+    document.getElementById('modal-title').textContent = `${dateStr} 일정 (${dayEvents.length}건)`;
+    document.getElementById('modal-body').innerHTML = `
+      <div style="max-height:300px;overflow:auto;">
+        ${dayEvents.map(ev => `
+          <div class="schedule-item schedule-item-clickable" data-event-id="${ev.id}" style="padding:6px 0;border-bottom:1px solid #f0f0f0;">
+            <div class="schedule-item-time" style="font-size:8px;color:#999;">${ev.time || ''} / ${typeLabel(ev.type)}</div>
+            <div class="schedule-item-title" style="font-size:9px;font-weight:500;">${esc(ev.title)}</div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+    document.getElementById('modal-footer').innerHTML = `<button class="btn" id="modal-popup-close">닫기</button>`;
+    overlay.classList.add('show');
+
+    document.getElementById('modal-popup-close').addEventListener('click', () => overlay.classList.remove('show'));
+
+    // 팝업 내 일정 클릭 → 상세
+    document.querySelectorAll('#modal-body .schedule-item-clickable').forEach(el => {
+      el.addEventListener('click', () => {
+        overlay.classList.remove('show');
+        setTimeout(() => showEventDetail(Number(el.dataset.eventId)), 100);
+      });
+    });
   }
 
   /** 일정 상세 보기 팝업 (수정/삭제) */
@@ -181,10 +224,12 @@ const SchedulePage = (() => {
       renderPage(document.getElementById('content-body'));
     });
     document.getElementById('modal-delete').addEventListener('click', () => {
-      _events = _events.filter(e => e.id !== eventId);
-      saveEvents();
-      overlay.classList.remove('show');
-      renderPage(document.getElementById('content-body'));
+      if (confirm('정말 이 일정을 삭제하시겠습니까?')) {
+        _events = _events.filter(e => e.id !== eventId);
+        saveEvents();
+        overlay.classList.remove('show');
+        renderPage(document.getElementById('content-body'));
+      }
     });
   }
 
@@ -258,13 +303,12 @@ const SchedulePage = (() => {
     // 캘린더 빈 날짜 클릭 → 새 일정 추가
     container.querySelectorAll('.calendar-day').forEach(day => {
       day.addEventListener('click', (e) => {
-        // 이벤트 버블링 방지: 일정 클릭이 아닌 경우만
-        if (e.target.closest('.cal-event-click')) return;
+        if (e.target.closest('.cal-event-click') || e.target.closest('.cal-day-more')) return;
         showAddEventModal(day.dataset.date);
       });
     });
 
-    // 캘린더 내 일정 클릭 → 상세 팝업
+    // 캘린더 내 일정 클릭 → 상세
     container.querySelectorAll('.cal-event-click').forEach(el => {
       el.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -272,7 +316,15 @@ const SchedulePage = (() => {
       });
     });
 
-    // 사이드바 일정 클릭 → 상세 팝업
+    // 더보기 클릭 → 해당 날짜 전체 일정 팝업
+    container.querySelectorAll('.cal-day-more').forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showDayEventsPopup(el.dataset.date);
+      });
+    });
+
+    // 사이드바 일정 클릭 → 상세
     container.querySelectorAll('.schedule-item-clickable').forEach(el => {
       el.addEventListener('click', () => {
         showEventDetail(Number(el.dataset.eventId));
