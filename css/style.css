@@ -809,6 +809,12 @@ body {
   border-radius: 4px;
 }
 
+.period-btn.active {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}
+
 .data-table-fixed {
   table-layout: fixed;
 }
