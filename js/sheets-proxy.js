@@ -12,7 +12,7 @@ const SheetsProxy = (() => {
   // ★ GAS 웹 앱 URL - 배포 후 여기에 붙여넣기
   // 예: 'https://script.google.com/macros/s/XXXXX/exec'
   // ====================================================
-  const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbykCTVPIQmtJlWfePDILZH-B26RoIRp34R-rZMcDx4CP1y93Z_wFx5cBwKADlNXT4_u/exec';
+  const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbx4VxsijMekDGKg34jIvdyVVGJ5iZyiqKK7nmzAm50R9tcP_Xeu_tcLB6Uutd7Oy8cE/exec';
 
   const SPREADSHEET_ID = '13LWJmvtSJRy6G43Lo_jar9hqZquCY4vB4bP4kAQVQLQ';
   const GVIZ_BASE_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq`;
