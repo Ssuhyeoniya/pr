@@ -1,13 +1,12 @@
 /**
  * App Router & Navigation Controller
- * 홍보협의체 메인 애플리케이션
  */
 
 const App = (() => {
   const pages = {
     schedule: { title: '일정 관리', render: (c) => SchedulePage.render(c) },
-    blog:     { title: '블로그 - POST_METRICS', render: (c) => BlogPage.render(c) },
-    stats:    { title: '블로그 - STATS_DAILY', render: (c) => StatsPage.render(c) },
+    blog:     { title: '블로그 - 관리', render: (c) => BlogPage.render(c) },
+    stats:    { title: '블로그 - 통계', render: (c) => StatsPage.render(c) },
   };
 
   let _currentPage = 'schedule';
@@ -15,8 +14,8 @@ const App = (() => {
   function init() {
     bindNavigation();
     bindRefresh();
+    bindModalGlobal();
 
-    // 해시 기반 라우팅
     const hash = window.location.hash.replace('#', '').replace('blog-posts', 'blog').replace('blog-stats', 'stats');
     if (pages[hash]) {
       navigateTo(hash);
@@ -34,17 +33,13 @@ const App = (() => {
 
   function navigateTo(pageName) {
     if (!pages[pageName]) return;
-
     _currentPage = pageName;
     const container = document.getElementById('content-body');
     const titleEl = document.getElementById('page-title');
 
-    // Update nav active state
     document.querySelectorAll('.nav-menu a').forEach(a => {
       a.classList.remove('active');
-      if (a.dataset.page === pageName) {
-        a.classList.add('active');
-      }
+      if (a.dataset.page === pageName) a.classList.add('active');
     });
 
     titleEl.textContent = pages[pageName].title;
@@ -69,8 +64,27 @@ const App = (() => {
     });
   }
 
+  /** 모달 바깥 클릭 & ESC 닫기 (글로벌) */
+  function bindModalGlobal() {
+    const overlay = document.getElementById('modal-overlay');
+    const modalBox = document.getElementById('modal-container');
+
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) overlay.classList.remove('show');
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && overlay.classList.contains('show')) {
+        overlay.classList.remove('show');
+      }
+    });
+
+    document.getElementById('modal-close')?.addEventListener('click', () => {
+      overlay.classList.remove('show');
+    });
+  }
+
   return { init, navigateTo };
 })();
 
-// Initialize app on DOM ready
 document.addEventListener('DOMContentLoaded', () => App.init());

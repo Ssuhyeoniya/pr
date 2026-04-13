@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>홍보협의체</title>
-  <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 </head>
@@ -17,28 +16,25 @@
         <span class="nav-logo-text">홍보협의체</span>
       </div>
 
-      <div class="nav-section-title">MENU</div>
       <ul class="nav-menu">
         <li>
           <a href="#schedule" data-page="schedule" class="active">
-            <span class="nav-icon">&#128197;</span>
             <span>일정 관리</span>
           </a>
         </li>
         <li>
           <a href="#blog" data-page="blog">
-            <span class="nav-icon">&#128221;</span>
             <span>블로그</span>
           </a>
           <ul class="nav-menu nav-sub">
             <li>
               <a href="#blog-posts" data-page="blog">
-                <span>POST_METRICS</span>
+                <span>관리</span>
               </a>
             </li>
             <li>
               <a href="#blog-stats" data-page="stats">
-                <span>STATS_DAILY</span>
+                <span>통계</span>
               </a>
             </li>
           </ul>
@@ -51,18 +47,16 @@
       <div class="content-header">
         <h1 id="page-title">일정 관리</h1>
         <div class="header-actions">
-          <button class="btn btn-sm" id="btn-refresh" title="데이터 새로고침">&#x21bb; 새로고침</button>
+          <button class="btn btn-sm" id="btn-refresh" title="데이터 새로고침">새로고침</button>
         </div>
       </div>
-      <div class="content-body" id="content-body">
-        <!-- Dynamic content loaded here -->
-      </div>
+      <div class="content-body" id="content-body"></div>
     </div>
   </div>
 
-  <!-- Modal for schedule/category creation -->
+  <!-- Modal -->
   <div class="modal-overlay" id="modal-overlay">
-    <div class="modal">
+    <div class="modal" id="modal-container">
       <div class="modal-header">
         <h3 id="modal-title">새 일정</h3>
         <button class="modal-close" id="modal-close">&times;</button>

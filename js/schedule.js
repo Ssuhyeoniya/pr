@@ -1,20 +1,17 @@
 /**
  * Schedule (일정 관리) Page
- * 간단한 캘린더 + 일정 목록
+ * 캘린더 + 일정 목록 + 일정 상세/수정/삭제 팝업
  */
 
 const SchedulePage = (() => {
   let _currentDate = new Date();
   let _events = [];
 
-  // localStorage에서 일정 복원
   function loadEvents() {
     try {
       const saved = localStorage.getItem('schedule_events');
       return saved ? JSON.parse(saved) : getSampleEvents();
-    } catch {
-      return getSampleEvents();
-    }
+    } catch { return getSampleEvents(); }
   }
 
   function saveEvents() {
@@ -23,20 +20,25 @@ const SchedulePage = (() => {
 
   function getSampleEvents() {
     const now = new Date();
-    const y = now.getFullYear();
-    const m = now.getMonth();
+    const y = now.getFullYear(), m = now.getMonth();
     return [
-      { id: 1, date: formatDateISO(new Date(y, m, 5)), title: '월간 홍보회의', type: 'meeting', time: '10:00' },
-      { id: 2, date: formatDateISO(new Date(y, m, 10)), title: '보도자료 마감', type: 'deadline', time: '18:00' },
-      { id: 3, date: formatDateISO(new Date(y, m, 15)), title: '블로그 포스트 발행', type: 'publish', time: '09:00' },
-      { id: 4, date: formatDateISO(new Date(y, m, 20)), title: 'SNS 캠페인 시작', type: 'other', time: '12:00' },
-      { id: 5, date: formatDateISO(new Date(y, m, 25)), title: '홍보 실적 보고', type: 'meeting', time: '14:00' },
+      { id: 1, date: fmtISO(new Date(y, m, 5)), title: '월간 홍보회의', type: 'meeting', time: '10:00' },
+      { id: 2, date: fmtISO(new Date(y, m, 10)), title: '보도자료 마감', type: 'deadline', time: '18:00' },
+      { id: 3, date: fmtISO(new Date(y, m, 15)), title: '블로그 포스트 발행', type: 'publish', time: '09:00' },
+      { id: 4, date: fmtISO(new Date(y, m, 20)), title: 'SNS 캠페인 시작', type: 'other', time: '12:00' },
+      { id: 5, date: fmtISO(new Date(y, m, 25)), title: '홍보 실적 보고', type: 'meeting', time: '14:00' },
     ];
   }
 
-  function formatDateISO(d) {
+  function fmtISO(d) {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
+
+  function typeLabel(t) {
+    return { meeting: '회의', deadline: '마감', publish: '발행', other: '기타' }[t] || t;
+  }
+
+  function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
   async function render(container) {
     _events = loadEvents();
@@ -46,24 +48,18 @@ const SchedulePage = (() => {
   function renderPage(container) {
     const year = _currentDate.getFullYear();
     const month = _currentDate.getMonth();
-    const monthNames = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
-    const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+    const monthNames = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+    const dayNames = ['일','월','화','수','목','금','토'];
 
-    // 이번 달의 일정 목록
     const monthEvents = _events
-      .filter(e => {
-        const d = new Date(e.date);
-        return d.getFullYear() === year && d.getMonth() === month;
-      })
+      .filter(e => { const d = new Date(e.date); return d.getFullYear() === year && d.getMonth() === month; })
       .sort((a, b) => a.date.localeCompare(b.date) || (a.time || '').localeCompare(b.time || ''));
 
     container.innerHTML = `
       <div class="schedule-layout">
         <div class="calendar-wrapper">
           <div class="calendar-header">
-            <div class="calendar-nav">
-              <button id="cal-prev">&laquo;</button>
-            </div>
+            <div class="calendar-nav"><button id="cal-prev">&laquo;</button></div>
             <h3>${year}년 ${monthNames[month]}</h3>
             <div class="calendar-nav">
               <button id="cal-next">&raquo;</button>
@@ -72,22 +68,21 @@ const SchedulePage = (() => {
           </div>
           <div class="calendar-grid">
             ${dayNames.map(d => `<div class="calendar-day-header">${d}</div>`).join('')}
-            ${generateCalendarDays(year, month)}
+            ${generateDays(year, month)}
           </div>
         </div>
         <div class="schedule-sidebar">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
             <h3>${monthNames[month]} 일정</h3>
-            <button class="btn btn-primary btn-sm" id="add-event-btn">+ 일정 추가</button>
+            <button class="btn btn-primary btn-sm" id="add-event-btn">+ 추가</button>
           </div>
           ${monthEvents.length === 0
             ? '<div class="empty-state" style="padding:20px;">일정이 없습니다.</div>'
             : monthEvents.map(ev => `
-              <div class="schedule-item">
+              <div class="schedule-item schedule-item-clickable" data-event-id="${ev.id}">
                 <div class="schedule-item-time">${ev.date} ${ev.time || ''}</div>
-                <div class="schedule-item-title">${escapeHtml(ev.title)}</div>
-                <span class="schedule-item-type calendar-event type-${ev.type}">${getTypeLabel(ev.type)}</span>
-                <button class="btn btn-sm" style="float:right;margin-top:-16px;font-size:8px;color:#999;" data-delete="${ev.id}">&times;</button>
+                <div class="schedule-item-title">${esc(ev.title)}</div>
+                <span class="schedule-item-type calendar-event type-${ev.type}">${typeLabel(ev.type)}</span>
               </div>
             `).join('')}
         </div>
@@ -97,32 +92,27 @@ const SchedulePage = (() => {
     bindEvents(container);
   }
 
-  function generateCalendarDays(year, month) {
+  function generateDays(year, month) {
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const daysInPrev = new Date(year, month, 0).getDate();
-    const today = new Date();
-    const todayStr = formatDateISO(today);
-
-    let html = '';
+    const todayStr = fmtISO(new Date());
     const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
+    let html = '';
 
     for (let i = 0; i < totalCells; i++) {
       let day, dateStr, isOther = false;
-
       if (i < firstDay) {
         day = daysInPrev - firstDay + 1 + i;
-        const d = new Date(year, month - 1, day);
-        dateStr = formatDateISO(d);
+        dateStr = fmtISO(new Date(year, month - 1, day));
         isOther = true;
       } else if (i >= firstDay + daysInMonth) {
         day = i - firstDay - daysInMonth + 1;
-        const d = new Date(year, month + 1, day);
-        dateStr = formatDateISO(d);
+        dateStr = fmtISO(new Date(year, month + 1, day));
         isOther = true;
       } else {
         day = i - firstDay + 1;
-        dateStr = formatDateISO(new Date(year, month, day));
+        dateStr = fmtISO(new Date(year, month, day));
       }
 
       const isToday = dateStr === todayStr;
@@ -130,36 +120,86 @@ const SchedulePage = (() => {
 
       html += `
         <div class="calendar-day ${isOther ? 'other-month' : ''} ${isToday ? 'today' : ''}" data-date="${dateStr}">
-          <div class="day-number">${isToday ? `<span style="background:var(--color-primary);color:#fff;border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:8px;">${day}</span>` : day}</div>
-          ${dayEvents.slice(0, 2).map(ev => `<div class="calendar-event type-${ev.type}" title="${escapeHtml(ev.title)}">${escapeHtml(ev.title)}</div>`).join('')}
+          <div class="day-number">${isToday
+            ? `<span style="background:var(--color-primary);color:#fff;border-radius:50%;width:14px;height:14px;display:inline-flex;align-items:center;justify-content:center;font-size:8px;">${day}</span>`
+            : day}</div>
+          ${dayEvents.slice(0, 2).map(ev =>
+            `<div class="calendar-event type-${ev.type} cal-event-click" data-event-id="${ev.id}" title="${esc(ev.title)}">${esc(ev.title)}</div>`
+          ).join('')}
           ${dayEvents.length > 2 ? `<div style="font-size:8px;color:#999;">+${dayEvents.length - 2}개</div>` : ''}
         </div>
       `;
     }
-
     return html;
   }
 
-  function getTypeLabel(type) {
-    const labels = { meeting: '회의', deadline: '마감', publish: '발행', other: '기타' };
-    return labels[type] || type;
+  /** 일정 상세 보기 팝업 (수정/삭제) */
+  function showEventDetail(eventId) {
+    const ev = _events.find(e => e.id === eventId);
+    if (!ev) return;
+
+    const overlay = document.getElementById('modal-overlay');
+    document.getElementById('modal-title').textContent = '일정 상세';
+    document.getElementById('modal-body').innerHTML = `
+      <div class="form-group">
+        <label>제목</label>
+        <input type="text" id="edit-event-title" value="${esc(ev.title)}">
+      </div>
+      <div class="form-group">
+        <label>날짜</label>
+        <input type="date" id="edit-event-date" value="${ev.date}">
+      </div>
+      <div class="form-group">
+        <label>시간</label>
+        <input type="time" id="edit-event-time" value="${ev.time || ''}">
+      </div>
+      <div class="form-group">
+        <label>유형</label>
+        <select id="edit-event-type">
+          <option value="meeting" ${ev.type === 'meeting' ? 'selected' : ''}>회의</option>
+          <option value="deadline" ${ev.type === 'deadline' ? 'selected' : ''}>마감</option>
+          <option value="publish" ${ev.type === 'publish' ? 'selected' : ''}>발행</option>
+          <option value="other" ${ev.type === 'other' ? 'selected' : ''}>기타</option>
+        </select>
+      </div>
+    `;
+    document.getElementById('modal-footer').innerHTML = `
+      <button class="btn btn-danger" id="modal-delete">삭제</button>
+      <button class="btn" id="modal-cancel">취소</button>
+      <button class="btn btn-primary" id="modal-save">수정</button>
+    `;
+    overlay.classList.add('show');
+
+    document.getElementById('modal-cancel').addEventListener('click', () => overlay.classList.remove('show'));
+    document.getElementById('modal-save').addEventListener('click', () => {
+      ev.title = document.getElementById('edit-event-title').value.trim() || ev.title;
+      ev.date = document.getElementById('edit-event-date').value || ev.date;
+      ev.time = document.getElementById('edit-event-time').value;
+      ev.type = document.getElementById('edit-event-type').value;
+      saveEvents();
+      overlay.classList.remove('show');
+      renderPage(document.getElementById('content-body'));
+    });
+    document.getElementById('modal-delete').addEventListener('click', () => {
+      _events = _events.filter(e => e.id !== eventId);
+      saveEvents();
+      overlay.classList.remove('show');
+      renderPage(document.getElementById('content-body'));
+    });
   }
 
+  /** 새 일정 추가 팝업 */
   function showAddEventModal(prefillDate) {
     const overlay = document.getElementById('modal-overlay');
-    const title = document.getElementById('modal-title');
-    const body = document.getElementById('modal-body');
-    const footer = document.getElementById('modal-footer');
-
-    title.textContent = '새 일정 추가';
-    body.innerHTML = `
+    document.getElementById('modal-title').textContent = '새 일정 추가';
+    document.getElementById('modal-body').innerHTML = `
       <div class="form-group">
-        <label>일정 제목</label>
+        <label>제목</label>
         <input type="text" id="event-title" placeholder="일정 제목 입력">
       </div>
       <div class="form-group">
         <label>날짜</label>
-        <input type="date" id="event-date" value="${prefillDate || formatDateISO(new Date())}">
+        <input type="date" id="event-date" value="${prefillDate || fmtISO(new Date())}">
       </div>
       <div class="form-group">
         <label>시간</label>
@@ -175,34 +215,31 @@ const SchedulePage = (() => {
         </select>
       </div>
     `;
-    footer.innerHTML = `
+    document.getElementById('modal-footer').innerHTML = `
       <button class="btn" id="modal-cancel">취소</button>
       <button class="btn btn-primary" id="modal-confirm">추가</button>
     `;
-
     overlay.classList.add('show');
 
     document.getElementById('modal-cancel').addEventListener('click', () => overlay.classList.remove('show'));
-    document.getElementById('modal-close').addEventListener('click', () => overlay.classList.remove('show'));
     document.getElementById('modal-confirm').addEventListener('click', () => {
-      const evTitle = document.getElementById('event-title').value.trim();
-      const evDate = document.getElementById('event-date').value;
-      const evTime = document.getElementById('event-time').value;
-      const evType = document.getElementById('event-type').value;
-
-      if (evTitle && evDate) {
+      const t = document.getElementById('event-title').value.trim();
+      const d = document.getElementById('event-date').value;
+      if (t && d) {
         const newId = _events.length > 0 ? Math.max(..._events.map(e => e.id)) + 1 : 1;
-        _events.push({ id: newId, date: evDate, title: evTitle, type: evType, time: evTime });
+        _events.push({
+          id: newId, date: d, title: t,
+          type: document.getElementById('event-type').value,
+          time: document.getElementById('event-time').value
+        });
         saveEvents();
-        const container = document.getElementById('content-body');
-        renderPage(container);
+        renderPage(document.getElementById('content-body'));
       }
       overlay.classList.remove('show');
     });
   }
 
   function bindEvents(container) {
-    // Calendar nav
     container.querySelector('#cal-prev')?.addEventListener('click', () => {
       _currentDate = new Date(_currentDate.getFullYear(), _currentDate.getMonth() - 1, 1);
       renderPage(container);
@@ -216,32 +253,31 @@ const SchedulePage = (() => {
       renderPage(container);
     });
 
-    // Add event
     container.querySelector('#add-event-btn')?.addEventListener('click', () => showAddEventModal());
 
-    // Click on calendar day
+    // 캘린더 빈 날짜 클릭 → 새 일정 추가
     container.querySelectorAll('.calendar-day').forEach(day => {
-      day.addEventListener('click', () => {
+      day.addEventListener('click', (e) => {
+        // 이벤트 버블링 방지: 일정 클릭이 아닌 경우만
+        if (e.target.closest('.cal-event-click')) return;
         showAddEventModal(day.dataset.date);
       });
     });
 
-    // Delete event
-    container.querySelectorAll('[data-delete]').forEach(btn => {
-      btn.addEventListener('click', (e) => {
+    // 캘린더 내 일정 클릭 → 상세 팝업
+    container.querySelectorAll('.cal-event-click').forEach(el => {
+      el.addEventListener('click', (e) => {
         e.stopPropagation();
-        const id = Number(btn.dataset.delete);
-        _events = _events.filter(ev => ev.id !== id);
-        saveEvents();
-        renderPage(container);
+        showEventDetail(Number(el.dataset.eventId));
       });
     });
-  }
 
-  function escapeHtml(str) {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
+    // 사이드바 일정 클릭 → 상세 팝업
+    container.querySelectorAll('.schedule-item-clickable').forEach(el => {
+      el.addEventListener('click', () => {
+        showEventDetail(Number(el.dataset.eventId));
+      });
+    });
   }
 
   return { render };
