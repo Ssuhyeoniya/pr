@@ -321,6 +321,8 @@ input, select, textarea {
   white-space: nowrap;
   cursor: pointer;
   user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
 }
 
 .data-table th:hover {

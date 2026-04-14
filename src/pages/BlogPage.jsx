@@ -97,7 +97,7 @@ export default function BlogPage() {
       setSortCol(col);
       setSortAsc(true);
     }
-    setPage(1);
+    // 정렬 시에는 페이지를 유지 (필터/검색만 1페이지로 리셋)
   };
 
   if (loading) return <LoadingSpinner message="POST_METRICS 데이터 로딩 중..." />;
