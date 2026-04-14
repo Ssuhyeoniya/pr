@@ -14,15 +14,15 @@ const BlogPage = (() => {
   let _serviceFilter = '';
   let _categoryFilter = '';
 
-  // 고정 컬럼 너비
+  // 고정 컬럼 너비 (축소)
   const COL_WIDTHS = {
-    service: '60px',
-    title: '220px',
-    thumbnail: '50px',
-    publishDate: '70px',
-    category: '70px',
-    totalVisit: '65px',
-    inbound: '55px'
+    service: '50px',
+    title: '180px',
+    thumbnail: '42px',
+    publishDate: '62px',
+    category: '60px',
+    totalVisit: '56px',
+    inbound: '48px'
   };
 
   async function render(container) {
@@ -88,7 +88,7 @@ const BlogPage = (() => {
             <tbody>
               ${pageData.length === 0
                 ? '<tr><td colspan="7" style="text-align:center;padding:20px;color:#999;">데이터가 없습니다.</td></tr>'
-                : pageData.map(row => renderRow(row)).join('')}
+                : pageData.map(row => renderRow(row)).join('') + renderEmptyRows(PAGE_SIZE - pageData.length)}
             </tbody>
           </table>
         </div>
@@ -104,6 +104,21 @@ const BlogPage = (() => {
     `;
 
     bindEvents(container);
+  }
+
+  /** 페이지네이션 동적 이동 방지: 빈 행으로 높이 고정 */
+  function renderEmptyRows(count) {
+    if (count <= 0) return '';
+    const empty = `<tr class="empty-row">
+      <td style="width:${COL_WIDTHS.service};">&nbsp;</td>
+      <td style="width:${COL_WIDTHS.title};">&nbsp;</td>
+      <td style="width:${COL_WIDTHS.thumbnail};">&nbsp;</td>
+      <td style="width:${COL_WIDTHS.publishDate};">&nbsp;</td>
+      <td style="width:${COL_WIDTHS.category};">&nbsp;</td>
+      <td style="width:${COL_WIDTHS.totalVisit};">&nbsp;</td>
+      <td style="width:${COL_WIDTHS.inbound};">&nbsp;</td>
+    </tr>`;
+    return empty.repeat(count);
   }
 
   function thFixed(key, label) {

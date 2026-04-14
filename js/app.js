@@ -10,13 +10,18 @@ const App = (() => {
   };
 
   let _currentPage = 'schedule';
+  let _internalHashUpdate = false; // 내부 hash 변경 플래그 (hashchange 이벤트 무시용)
+
+  function normalizeHash(h) {
+    return (h || '').replace('#', '').replace('blog-posts', 'blog').replace('blog-stats', 'stats');
+  }
 
   function init() {
     bindNavigation();
     bindRefresh();
     bindModalGlobal();
 
-    const hash = window.location.hash.replace('#', '').replace('blog-posts', 'blog').replace('blog-stats', 'stats');
+    const hash = normalizeHash(window.location.hash);
     if (pages[hash]) {
       navigateTo(hash);
     } else {
@@ -24,7 +29,12 @@ const App = (() => {
     }
 
     window.addEventListener('hashchange', () => {
-      const h = window.location.hash.replace('#', '').replace('blog-posts', 'blog').replace('blog-stats', 'stats');
+      // 우리가 programmatic하게 바꾼 경우는 무시
+      if (_internalHashUpdate) {
+        _internalHashUpdate = false;
+        return;
+      }
+      const h = normalizeHash(window.location.hash);
       if (pages[h] && h !== _currentPage) {
         navigateTo(h);
       }
@@ -34,6 +44,18 @@ const App = (() => {
   function navigateTo(pageName) {
     if (!pages[pageName]) return;
     _currentPage = pageName;
+
+    // 페이지 전환 시 열려있는 모달 닫기
+    const overlay = document.getElementById('modal-overlay');
+    if (overlay) overlay.classList.remove('show');
+
+    // hash 동기화 (hashchange 이벤트 재진입 방지)
+    const currentHash = normalizeHash(window.location.hash);
+    if (currentHash !== pageName) {
+      _internalHashUpdate = true;
+      history.replaceState(null, '', '#' + pageName);
+    }
+
     const container = document.getElementById('content-body');
     const titleEl = document.getElementById('page-title');
 
@@ -50,9 +72,9 @@ const App = (() => {
     document.querySelectorAll('.nav-menu a[data-page]').forEach(link => {
       link.addEventListener('click', (e) => {
         e.preventDefault();
+        e.stopPropagation();
         const page = link.dataset.page;
-        window.location.hash = page;
-        navigateTo(page);
+        navigateTo(page); // navigateTo가 hash도 같이 업데이트
       });
     });
   }

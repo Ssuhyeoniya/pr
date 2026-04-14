@@ -313,39 +313,35 @@ const StatsPage = (() => {
   function showMorePopup(type, visitCol, inboundCol) {
     const sortCol = type === 'visit' ? visitCol : inboundCol;
     const label = type === 'visit' ? '조회수' : '인바운드';
+    const dateCol = getDateCol();
+    const visitorsCol = getVisitCol(); // C:visitors (조회수 컬럼)
     const sorted = [..._filtered].sort((a, b) => Number(b[sortCol] || 0) - Number(a[sortCol] || 0));
-
-    // 표시 컬럼: 제거 컬럼 빼고, title 컬럼 추가
-    const displayHeaders = ['title', ..._headers.filter(h =>
-      !EXCLUDE_COLS.includes(h.toLowerCase().trim())
-    )];
 
     const overlay = document.getElementById('modal-overlay');
     document.getElementById('modal-title').textContent = `${label} 전체 목록 (${sorted.length}건)`;
     document.getElementById('modal-body').innerHTML = `
       <div style="max-height:360px;overflow:auto;">
         <table class="data-table">
-          <thead><tr>${displayHeaders.map(h => `<th>${esc(h === 'title' ? '제목' : h)}</th>`).join('')}</tr></thead>
+          <thead>
+            <tr>
+              <th>제목</th>
+              <th>발행일</th>
+              <th>visitors</th>
+            </tr>
+          </thead>
           <tbody>
-            ${sorted.map(row => `<tr>${displayHeaders.map(h => {
-              let v;
-              if (h === 'title') {
-                v = resolveTitle(row) || '-';
-                return `<td>${esc(v)}</td>`;
-              }
-              v = row[h];
-              // 날짜 컬럼 → YYYY-MM-DD 포맷
-              const hl = h.toLowerCase();
-              if (hl.includes('date') || hl.includes('날짜') || hl.includes('일자') || hl.includes('day')) {
-                return `<td>${fmtDate(v) || '-'}</td>`;
-              }
-              // 그 외 날짜 형태 값도 YYYY-MM-DD로 변환
-              if (v && String(v).includes('T') && String(v).match(/^\d{4}-\d{2}-\d{2}T/)) {
-                return `<td>${String(v).substring(0, 10)}</td>`;
-              }
-              const isN = typeof v === 'number' || (!isNaN(Number(v)) && v !== '' && v != null);
-              return `<td class="${isN ? 'number-cell' : ''}">${v != null ? (isN ? Number(v).toLocaleString() : esc(String(v))) : '-'}</td>`;
-            }).join('')}</tr>`).join('')}
+            ${sorted.map(row => {
+              const title = resolveTitle(row) || '-';
+              const dateVal = dateCol ? (fmtDate(row[dateCol]) || '-') : '-';
+              const visitors = visitorsCol != null && row[visitorsCol] !== '' && row[visitorsCol] != null
+                ? Number(row[visitorsCol]).toLocaleString()
+                : '-';
+              return `<tr>
+                <td>${esc(title)}</td>
+                <td>${dateVal}</td>
+                <td class="number-cell">${visitors}</td>
+              </tr>`;
+            }).join('')}
           </tbody>
         </table>
       </div>

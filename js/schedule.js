@@ -104,7 +104,7 @@ const SchedulePage = (() => {
     const daysInPrev = new Date(year, month, 0).getDate();
     const todayStr = fmtISO(new Date());
     const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
-    const MAX_VISIBLE = 4; // 셀에 보이는 최대 일정 수
+    const MAX_VISIBLE = 2; // 3개 이상이면 2개만 노출 + 더보기 버튼
     let html = '';
 
     for (let i = 0; i < totalCells; i++) {
@@ -136,7 +136,7 @@ const SchedulePage = (() => {
             `<div class="calendar-event type-${ev.type} cal-event-click" data-event-id="${ev.id}" title="${esc(ev.title)}">${esc(ev.title)}</div>`
           ).join('')}
           ${hiddenCount > 0
-            ? `<div class="cal-day-more" data-date="${dateStr}" style="font-size:8px;color:var(--color-primary);cursor:pointer;">+${hiddenCount}개 더보기</div>`
+            ? `<div class="cal-day-more" data-date="${dateStr}">+${hiddenCount}개 더보기</div>`
             : ''}
         </div>
       `;

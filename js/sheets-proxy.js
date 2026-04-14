@@ -124,7 +124,7 @@ const SheetsProxy = (() => {
    */
   async function getConfig() {
     if (!isGASMode()) {
-      return { site_title: '홍보협의체', blog_page_size: 20, stats_page_size: 30 };
+      return { site_title: 'PR', blog_page_size: 20, stats_page_size: 30 };
     }
 
     if (_config) return _config;
