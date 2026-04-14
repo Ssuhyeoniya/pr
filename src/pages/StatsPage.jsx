@@ -18,7 +18,8 @@ import { STATS_EXCLUDE_COLS } from '../config.js';
  */
 export default function StatsPage() {
   const [statsData, setStatsData] = useState({ headers: [], rows: [], categories: [] });
-  const [titleMap, setTitleMap] = useState({});
+  // postId → { title, publishDate } (POST_METRICS 기준)
+  const [postMap, setPostMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [userCategories, setUserCategories] = useLocalStorage('stats_user_categories', []);
@@ -38,21 +39,27 @@ export default function StatsPage() {
     setError(null);
     Promise.all([
       getStatsDaily(),
-      getPostMetrics({ columns: 'postId,title' }),
+      getPostMetrics({ columns: 'postId,title,publishDate' }),
     ])
       .then(([stats, post]) => {
         if (cancelled) return;
+        // postId → { title, publishDate }
         const map = {};
         if (post?.rows) {
           post.rows.forEach(r => {
             const id = String(r.postId || '').trim();
-            if (id) map[id] = r.title || '';
+            if (id) {
+              map[id] = {
+                title: r.title || '',
+                publishDate: normalizeDate(r.publishDate) || '',
+              };
+            }
           });
         }
         const filteredHeaders = (stats.headers || []).filter(h =>
           !STATS_EXCLUDE_COLS.includes(String(h).toLowerCase().trim())
         );
-        setTitleMap(map);
+        setPostMap(map);
         setStatsData({
           headers: filteredHeaders,
           rows: stats.rows || [],
@@ -116,12 +123,6 @@ export default function StatsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [headers, rows]);
 
-  const resolveTitle = (row) => {
-    if (!postIdCol) return null;
-    const pid = String(row[postIdCol] || '').trim();
-    return titleMap[pid] || null;
-  };
-
   // 카테고리 목록 (시트 + 사용자)
   const sheetCategories = useMemo(() => {
     const catKey = headers.find(h => {
@@ -170,22 +171,57 @@ export default function StatsPage() {
     return { dailyKeys: Object.keys(map).sort(), dailyMap: map };
   }, [filtered, dateCol, visitCol, inboundCol]);
 
-  // TOP5
+  /**
+   * postId 별로 집계 (조회수/인바운드 합산).
+   * 기간 내 같은 postId 의 여러 일자 row 를 하나로 합치고
+   * title/publishDate 는 POST_METRICS 에서 조회.
+   * postId 가 없는 row 는 기존 row 단위로 유지 (fallback).
+   */
+  const aggregatedByPost = useMemo(() => {
+    if (!postIdCol) {
+      return filtered.map(r => ({
+        postId: null,
+        title: '-',
+        publishDate: dateCol ? (normalizeDate(r[dateCol]) || '-') : '-',
+        visit: Number(r[visitCol] || 0),
+        inbound: Number(r[inboundCol] || 0),
+      }));
+    }
+    const agg = new Map();
+    filtered.forEach(row => {
+      const pid = String(row[postIdCol] || '').trim();
+      if (!pid) return;
+      const info = postMap[pid] || {};
+      if (!agg.has(pid)) {
+        agg.set(pid, {
+          postId: pid,
+          title: info.title || '-',
+          publishDate: info.publishDate || '-',
+          visit: 0,
+          inbound: 0,
+        });
+      }
+      const entry = agg.get(pid);
+      entry.visit += Number(row[visitCol] || 0);
+      entry.inbound += Number(row[inboundCol] || 0);
+    });
+    return [...agg.values()];
+  }, [filtered, postIdCol, postMap, visitCol, inboundCol, dateCol]);
+
+  // TOP5 - postId 단위 집계 결과 사용
   const visitTop5 = useMemo(() => {
-    return [...filtered]
-      .sort((a, b) => Number(b[visitCol] || 0) - Number(a[visitCol] || 0))
+    return [...aggregatedByPost]
+      .sort((a, b) => b.visit - a.visit)
       .slice(0, 5)
-      .map(r => ({ name: resolveTitle(r) || '-', value: r[visitCol] }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filtered, visitCol, titleMap, postIdCol]);
+      .map(r => ({ name: r.title, value: r.visit }));
+  }, [aggregatedByPost]);
 
   const inboundTop5 = useMemo(() => {
-    return [...filtered]
-      .sort((a, b) => Number(b[inboundCol] || 0) - Number(a[inboundCol] || 0))
+    return [...aggregatedByPost]
+      .sort((a, b) => b.inbound - a.inbound)
       .slice(0, 5)
-      .map(r => ({ name: resolveTitle(r) || '-', value: r[inboundCol] }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filtered, inboundCol, titleMap, postIdCol]);
+      .map(r => ({ name: r.title, value: r.inbound }));
+  }, [aggregatedByPost]);
 
   const handlePeriod = (period) => {
     setActivePeriod(period);
@@ -246,9 +282,12 @@ export default function StatsPage() {
   };
 
   const handleMorePopup = (type) => {
-    const sortCol = type === 'visit' ? visitCol : inboundCol;
     const label = type === 'visit' ? '조회수' : '인바운드';
-    const sorted = [...filtered].sort((a, b) => Number(b[sortCol] || 0) - Number(a[sortCol] || 0));
+    // postId 기준 집계 데이터를 해당 타입으로 정렬
+    const sorted = [...aggregatedByPost].sort((a, b) =>
+      type === 'visit' ? b.visit - a.visit : b.inbound - a.inbound
+    );
+    const valueLabel = type === 'visit' ? 'visitors' : 'inbound';
 
     openModal({
       title: `${label} 전체 목록 (${sorted.length}건)`,
@@ -260,15 +299,17 @@ export default function StatsPage() {
               <tr>
                 <th>제목</th>
                 <th>발행일</th>
-                <th>visitors</th>
+                <th>{valueLabel}</th>
               </tr>
             </thead>
             <tbody>
-              {sorted.map((row, i) => (
-                <tr key={i}>
-                  <td>{resolveTitle(row) || '-'}</td>
-                  <td>{dateCol ? (normalizeDate(row[dateCol]) || '-') : '-'}</td>
-                  <td className="number-cell">{fmtNumber(row[visitCol])}</td>
+              {sorted.map((r, i) => (
+                <tr key={r.postId || i}>
+                  <td>{r.title || '-'}</td>
+                  <td>{r.publishDate || '-'}</td>
+                  <td className="number-cell">
+                    {fmtNumber(type === 'visit' ? r.visit : r.inbound)}
+                  </td>
                 </tr>
               ))}
             </tbody>
